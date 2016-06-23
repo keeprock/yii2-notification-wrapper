@@ -1,12 +1,10 @@
 <?php
-
 namespace lo\modules\noty\widgets;
 
 use Yii;
-use yii\base\Widget;
+use yii\web\View;
 use yii\helpers\Json;
 use yii\helpers\Html;
-use yii\web\View;
 
 /**
  * This package comes with a Wrapper widget that can be used to regularly poll the server
@@ -33,7 +31,7 @@ use yii\web\View;
  *  ]);
  * ---------------------------------------
  */
-class Wrapper extends Widget
+class Wrapper extends \yii\base\Widget
 {
     /** @const type info */
     const TYPE_INFO = 'info';
@@ -143,16 +141,25 @@ class Wrapper extends Widget
      */
     protected function getFlashes($layer)
     {
-        $session = Yii::$app->session;
+        $session = \Yii::$app->session;
         $flashes = $session->getAllFlashes();
         $options = $this->options;
         $result = [];
 
         foreach ($flashes as $type => $data) {
             $data = (array)$data;
-            $type = (in_array($type, $this->types)) ? $type : self::TYPE_INFO;
-
-            foreach ($data as $i => $message) {
+            
+            if (isset($data['options'])) {
+                $options = array_merge($options, $data['options']);
+            }
+            
+            if (!$data['customTitle'] || !isset($data['customTitle'])) {
+                if (!in_array($type, $this->types)) {
+                    $type = self::TYPE_INFO;
+                }
+            }
+            
+            foreach ($data['message'] as $i => $message) {
                 $result[] = $layer->getNotification($type, $message, $options);
             }
 
@@ -169,23 +176,24 @@ class Wrapper extends Widget
     /**
      * Get title
      */
-    public function getTitle($type)
+    public
+    function getTitle($type)
     {
         switch ($type) {
             case self::TYPE_ERROR:
-                $t = Yii::t('noty', 'Error');
+                $t = \Yii::t('noty', 'Error');
                 break;
             case self::TYPE_INFO:
-                $t = Yii::t('noty', 'Info');
+                $t = \Yii::t('noty', 'Info');
                 break;
             case self::TYPE_WARNING:
-                $t = Yii::t('noty', 'Warning');
+                $t = \Yii::t('noty', 'Warning');
                 break;
             case self::TYPE_SUCCESS:
-                $t = Yii::t('noty', 'Success');
+                $t = \Yii::t('noty', 'Success');
                 break;
             default:
-                $t = '';
+                $t = $type;
         }
 
         return $t;
@@ -194,7 +202,8 @@ class Wrapper extends Widget
     /**
      * load layer
      */
-    protected function loadLayer()
+    protected
+    function loadLayer()
     {
         $layer = new $this->layerClass;
         return $layer;
